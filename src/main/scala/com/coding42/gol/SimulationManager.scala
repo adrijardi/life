@@ -1,19 +1,18 @@
 package com.coding42.gol
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 import com.coding42.gol.GameOfLife.LifeBoard
 
 import scala.concurrent.{Future, Promise}
-import scalafx.scene.canvas.GraphicsContext
-import scalafx.scene.control.{Button, Slider}
-import scalafx.scene.image.WritableImage
+import scalafx.scene.image.{Image, WritableImage}
 import scalafx.scene.paint.Color
-import scalafx.scene.text.Text
 import scalaz.concurrent.Task
 
-class SimulationManager(seed: Option[Int], width: Int, height: Int,
-                        speedSlider: Slider, restartBtn: Button, stepText: Text, canvasCtx: GraphicsContext) {
+class SimulationManager(seed: Option[Int], width: Int, height: Int, speedProvider: () => Int, stepUpdater: Int => Unit,
+                        imageUpdater: Image => Unit) {
 
-  var running = true
+  var running = new AtomicBoolean(false)
   val finishPromise = Promise[Unit]()
 
   val life = seed match {
@@ -24,11 +23,11 @@ class SimulationManager(seed: Option[Int], width: Int, height: Int,
   val task = Task.fork {
     var step = 0
     Task {
-      while(running) {
+      while(running.get()) {
         life.evaluateStep()
         drawBoard(life.currentStatus)
         step += 1
-        stepText.text = ""+step
+        stepUpdater(step)
         Thread.sleep(calculateSleep)
       }
       finishPromise.success()
@@ -36,15 +35,20 @@ class SimulationManager(seed: Option[Int], width: Int, height: Int,
   }
 
   def calculateSleep: Int = {
-    1000 / speedSlider.value.value.toInt
+    1000 / speedProvider()
   }
 
-  def runSimulation(): Unit = {
-    task.unsafePerformAsync(_ => ())
+  def start(): Boolean = {
+    if(running.compareAndSet(false, true)) {
+      task.unsafePerformAsync(_ => ())
+      true
+    } else {
+      false
+    }
   }
 
   def stop(): Future[Unit] = {
-    running = false
+    running.set(false)
     finishPromise.future
   }
 
@@ -65,7 +69,7 @@ class SimulationManager(seed: Option[Int], width: Int, height: Int,
       }
     }
 
-    canvasCtx.drawImage(image, 0, 0)
+    imageUpdater(image)
   }
 
 }
@@ -76,9 +80,9 @@ object SimulationManager {
 
   type SimGenerator = SimulationConfig => SimulationManager
 
-  def apply(speedSlider: Slider, restartBtn: Button, stepText: Text, canvasCtx: GraphicsContext): SimGenerator = {
+  def generator(speedProvider: () => Int, stepUpdater: Int => Unit, imageUpdater: Image => Unit): SimGenerator = {
     case SimulationConfig(seed, width, height) =>
-      new SimulationManager(seed, width, height, speedSlider, restartBtn, stepText, canvasCtx)
+      new SimulationManager(seed, width, height, speedProvider, stepUpdater, imageUpdater)
   }
 
 }

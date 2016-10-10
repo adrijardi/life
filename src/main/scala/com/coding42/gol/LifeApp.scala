@@ -12,6 +12,7 @@ import scalafx.scene.layout._
 import scalafx.scene.text.Text
 import concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
+import scalafx.scene.image.Image
 import scalafx.stage.{Modality, Stage}
 
 object LifeApp extends JFXApp {
@@ -60,7 +61,11 @@ object LifeApp extends JFXApp {
     }
   }
 
-  val simulator = SimulationManager(slider, restartBtn, stepText, gc)
+  private val speedProvider = () => slider.value.value.toInt
+  private val stepUpdater = (step: Int) => stepText.text = "" + step
+  private val imageUpdater = (image: Image) => gc.drawImage(image, 0, 0)
+
+  val generator = SimulationManager.generator(speedProvider, stepUpdater, imageUpdater)
   var currentSim: SimulationManager = _
   restartSimulation()
 
@@ -68,8 +73,8 @@ object LifeApp extends JFXApp {
     val seed = None
     val width = Try(widthField.text.value.toInt).getOrElse(300) // TODO check field has only numbers
     val height = Try(heightField.text.value.toInt).getOrElse(200)
-    currentSim = simulator(SimulationConfig(seed, width, height))
-    currentSim.runSimulation()
+    currentSim = generator(SimulationConfig(seed, width, height))
+    currentSim.start()
   }
 
   restartBtn.onAction = new EventHandler[ActionEvent] {
