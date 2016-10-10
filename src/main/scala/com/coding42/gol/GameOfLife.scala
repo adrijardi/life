@@ -50,11 +50,7 @@ object GameOfLife {
 
   val numArrays = 2
 
-  def apply(size: Int, seed: Int = Random.nextInt): GameOfLife = {
-    this(size, size, seed)
-  }
-
-  def apply(width: Int, height: Int, seed: Int): GameOfLife = {
+  def apply(width: Int, height: Int, seed: Int = Random.nextInt): GameOfLife = {
     val randomGen = new Random(seed)
 
     val board: LifeBoard =

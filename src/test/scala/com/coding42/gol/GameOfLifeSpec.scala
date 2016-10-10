@@ -48,5 +48,19 @@ class GameOfLifeSpec extends FlatSpec with Matchers {
     val life: GameOfLife = GameOfLife(blinker)
     life.evaluateStep()
     life.currentStatus shouldBe blinkerMoved
+    life.evaluateStep()
+    life.currentStatus shouldBe blinker
   }
+
+  it should "generate a random array of the specified size" in {
+    val seed = 1001
+    val expected = Array(
+      Array(true, true),
+      Array(true, false),
+      Array(true, true)
+    )
+
+    GameOfLife(3, 2, seed).currentStatus shouldBe expected
+  }
+
 }
