@@ -35,4 +35,16 @@ class SimulationManagerSpec extends FlatSpec with Matchers with ScalaFutures wit
     promise.future.futureValue shouldBe List(3,2,1)
     Await.result(simulation.stop(), 1.second)
   }
+
+  it should "start always the same simulation with a seed" in {
+    val generator = SimulationManager.generator( () => 100, _ => (), _ => ())
+    val simulation = generator(SimulationConfig(Some(1234), 5, 5))
+    simulation.life.board shouldBe Vector(
+      Vector(true, false, true, false, true),
+      Vector(false, false, true, false, false),
+      Vector(false, false, false, false, true),
+      Vector(false, true, false, false, false),
+      Vector(false, false, false, true, false)
+    )
+  }
 }
