@@ -47,4 +47,12 @@ class SimulationManagerSpec extends FlatSpec with Matchers with ScalaFutures wit
       Vector(false, false, false, true, false)
     )
   }
+
+  it should "not be able to start a simulation twice" in {
+    val generator = SimulationManager.generator( () => 100, _ => (), _ => ())
+    val simulation = generator(SimulationConfig(None, 50, 10))
+    simulation.start() shouldBe true
+    simulation.start() shouldBe false
+    Await.result(simulation.stop(), 1.second)
+  }
 }
