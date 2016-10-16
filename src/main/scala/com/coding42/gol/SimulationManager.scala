@@ -5,12 +5,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import com.coding42.gol.GameOfLife.LifeBoard
 
 import scala.concurrent.{Future, Promise}
-import scalafx.scene.image.{Image, WritableImage}
-import scalafx.scene.paint.Color
 import scalaz.concurrent.Task
 
 class SimulationManager(seed: Option[Int], width: Int, height: Int, speedProvider: () => Int, stepUpdater: Int => Unit,
-                        imageUpdater: Image => Unit) {
+                        imageUpdater: LifeBoard => Unit) {
 
   var running = new AtomicBoolean(false)
   val finishPromise = Promise[Unit]()
@@ -25,7 +23,7 @@ class SimulationManager(seed: Option[Int], width: Int, height: Int, speedProvide
     Task {
       while(running.get()) {
         life = life.getNextStep
-        drawBoard(life.board)
+        imageUpdater(life.board)
         step += 1
         stepUpdater(step)
         Thread.sleep(calculateSleep)
@@ -52,26 +50,6 @@ class SimulationManager(seed: Option[Int], width: Int, height: Int, speedProvide
     finishPromise.future
   }
 
-  def drawBoard(lifeBoard: LifeBoard) = {
-    val width = lifeBoard.length
-    val height = lifeBoard(0).length // TODO maybe move to case class instead
-
-    val image = new WritableImage(width, height)
-    val pixelWriter = image.pixelWriter
-
-    lifeBoard.zipWithIndex.foreach { case (row, x) =>
-      row.zipWithIndex.foreach{ case (alive, y) =>
-        val color = if( lifeBoard(x)(y) )
-          Color.Black
-        else
-          Color.White
-        pixelWriter.setColor(x, y, color)
-      }
-    }
-
-    imageUpdater(image)
-  }
-
 }
 
 object SimulationManager {
@@ -80,7 +58,7 @@ object SimulationManager {
 
   type SimGenerator = SimulationConfig => SimulationManager
 
-  def generator(speedProvider: () => Int, stepUpdater: Int => Unit, imageUpdater: Image => Unit): SimGenerator = {
+  def generator(speedProvider: () => Int, stepUpdater: Int => Unit, imageUpdater: LifeBoard => Unit): SimGenerator = {
     case SimulationConfig(seed, width, height) =>
       new SimulationManager(seed, width, height, speedProvider, stepUpdater, imageUpdater)
   }
