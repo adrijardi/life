@@ -5,62 +5,59 @@ import org.scalatest.{FlatSpec, Matchers}
 class GameOfLifeSpec extends FlatSpec with Matchers {
 
   it should "load the block" in {
-    val block = Array(
-      Array(false, false, false, false),
-      Array(false, true, true, false),
-      Array(false, true, true, false),
-      Array(false, false, false, false)
+    val block = Vector(
+      Vector(false, false, false, false),
+      Vector(false, true, true, false),
+      Vector(false, true, true, false),
+      Vector(false, false, false, false)
     )
 
-    GameOfLife(block).currentStatus shouldBe block
+    GameOfLife(block).board shouldBe block
   }
 
   it should "not change the block" in {
-    val block = Array(
-      Array(false, false, false, false),
-      Array(false, true, true, false),
-      Array(false, true, true, false),
-      Array(false, false, false, false)
+    val block = Vector(
+      Vector(false, false, false, false),
+      Vector(false, true, true, false),
+      Vector(false, true, true, false),
+      Vector(false, false, false, false)
     )
 
-    val life: GameOfLife = GameOfLife(block)
-    life.evaluateStep()
-    life.currentStatus shouldBe block
+    val life: GameOfLife = GameOfLife(block).getNextStep
+    life.board shouldBe block
   }
 
   it should "change the blinker" in {
-    val blinker = Array(
-      Array(false, false, false, false, false),
-      Array(false, false, false, false, false),
-      Array(false, true, true, true, false),
-      Array(false, false, false, false, false),
-      Array(false, false, false, false, false)
+    val blinker = Vector(
+      Vector(false, false, false, false, false),
+      Vector(false, false, false, false, false),
+      Vector(false, true, true, true, false),
+      Vector(false, false, false, false, false),
+      Vector(false, false, false, false, false)
     )
 
-    val blinkerMoved = Array(
-      Array(false, false, false, false, false),
-      Array(false, false, true, false, false),
-      Array(false, false, true, false, false),
-      Array(false, false, true, false, false),
-      Array(false, false, false, false, false)
+    val blinkerMoved = Vector(
+      Vector(false, false, false, false, false),
+      Vector(false, false, true, false, false),
+      Vector(false, false, true, false, false),
+      Vector(false, false, true, false, false),
+      Vector(false, false, false, false, false)
     )
 
-    val life: GameOfLife = GameOfLife(blinker)
-    life.evaluateStep()
-    life.currentStatus shouldBe blinkerMoved
-    life.evaluateStep()
-    life.currentStatus shouldBe blinker
+    val life: GameOfLife = GameOfLife(blinker).getNextStep
+    life.board shouldBe blinkerMoved
+    life.getNextStep.board shouldBe blinker
   }
 
   it should "generate a random array of the specified size" in {
     val seed = 1001
-    val expected = Array(
-      Array(true, true),
-      Array(true, false),
-      Array(true, true)
+    val expected = Vector(
+      Vector(true, true),
+      Vector(true, false),
+      Vector(true, true)
     )
 
-    GameOfLife(3, 2, seed).currentStatus shouldBe expected
+    GameOfLife(3, 2, seed).board shouldBe expected
   }
 
 }

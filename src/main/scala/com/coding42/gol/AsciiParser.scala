@@ -9,16 +9,13 @@ object AsciiParser {
   def parse(str: String): Try[LifeBoard] = {
     val lines = str.lines
 
-    val cols = lines.map { line =>
-      val array = Array(line.map {
-        case 'O' | 'o' => true
-        case '-' => false
-      }: _*)
-      array
-    }.toSeq
-
     Try(
-      Array(cols: _*)
+      lines.map { line =>
+        line.map {
+          case 'O' | 'o' => true
+          case '-' => false
+        }.toVector
+      }.toVector
     )
   }
 

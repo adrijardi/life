@@ -2,6 +2,8 @@ package com.coding42.gol
 
 import org.scalatest.{FlatSpec, Matchers}
 
+import scala.util.Failure
+
 class AsciiParserSpec extends FlatSpec with Matchers {
 
   it should "parse the block" in {
@@ -23,5 +25,9 @@ class AsciiParserSpec extends FlatSpec with Matchers {
       Array(false, false, false, false, false, false)
     )
     AsciiParser.parse(Patterns.beehive).get shouldBe expected
+  }
+
+  it should "fail when the board is invalid" in {
+    AsciiParser.parse("Hi there!") shouldBe a[Failure[_]]
   }
 }

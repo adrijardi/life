@@ -15,7 +15,7 @@ class SimulationManager(seed: Option[Int], width: Int, height: Int, speedProvide
   var running = new AtomicBoolean(false)
   val finishPromise = Promise[Unit]()
 
-  val life = seed match {
+  var life = seed match {
     case Some(s) => GameOfLife(width, height, s)
     case _       => GameOfLife(width, height)
   }
@@ -24,8 +24,8 @@ class SimulationManager(seed: Option[Int], width: Int, height: Int, speedProvide
     var step = 0
     Task {
       while(running.get()) {
-        life.evaluateStep()
-        drawBoard(life.currentStatus)
+        life = life.getNextStep
+        drawBoard(life.board)
         step += 1
         stepUpdater(step)
         Thread.sleep(calculateSleep)
