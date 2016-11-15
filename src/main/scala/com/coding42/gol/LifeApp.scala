@@ -23,11 +23,13 @@ object LifeApp extends JFXApp {
   val canvas = new Canvas(startWidth, startHeight)
   val gc = canvas.graphicsContext2D
 
+  val speedLabel = new Text("Speed")
   val speedSlider = new Slider()
   speedSlider.setMin(1)
-  speedSlider.setMax(100)
-  speedSlider.setValue(1)
+  speedSlider.setMax(30)
+  speedSlider.setValue(5)
 
+  val zoomLabel = new Text("Zoom")
   val zoomSlider = new Slider()
   zoomSlider.setMin(1)
   zoomSlider.setMax(10)
@@ -43,19 +45,24 @@ object LifeApp extends JFXApp {
 
   val stepText = new Text("0")
 
-  val down = new HBox()
-//  down.setStyle("-fx-background-color: #FF0000;")
-  down.children_=(List(
-    stepText,
-    restartBtn,
-    speedSlider,
-    zoomSlider
-  ))
+  val down = new VBox(10,
+    new HBox(10,
+      stepText,
+      restartBtn
+    ),
+    new HBox(10,
+      speedLabel,
+      speedSlider,
+      zoomLabel,
+      zoomSlider
+    )
+  )
 
   stage = new JFXApp.PrimaryStage {
     title.value = "Life"
     width = 800
     height = 500
+    resizable = false
     scene = new Scene {
       content = new BorderPane {
         center = canvas
@@ -70,12 +77,10 @@ object LifeApp extends JFXApp {
 
   val generator = SimulationManager.generator(speedProvider, stepUpdater, imageUpdater)
   var currentSim: SimulationManager = _
-  restartSimulation()
+  restartSimulation(startWidth, startHeight)
 
-  def restartSimulation() = {
+  def restartSimulation(width: Int, height: Int) = {
     val seed = None
-    val width = Try(widthField.text.value.toInt).getOrElse(startWidth) // TODO check field has only numbers
-    val height = Try(heightField.text.value.toInt).getOrElse(startHeight)
     canvas.width_=(width)
     canvas.height_=(height)
     stage.sizeToScene()
@@ -83,35 +88,38 @@ object LifeApp extends JFXApp {
     currentSim.start()
   }
 
-  restartBtn.onAction = new EventHandler[ActionEvent] {
+  restartBtn.onAction = (event: ActionEvent) => {
+    val dialog = new Stage()
+    dialog.initModality(Modality.ApplicationModal)
+    dialog.initOwner(stage)
+    val errorMsg = new Text("")
 
-    override def handle(event: ActionEvent): Unit = {
-      val dialog = new Stage()
-      dialog.initModality(Modality.ApplicationModal)
-      dialog.initOwner(stage)
-      val dialogVbox = new VBox(20)
-
-      okBtn.onAction = new EventHandler[ActionEvent] {
-        override def handle(event: ActionEvent): Unit = {
-          dialog.close()
-          currentSim.stop()
-          restartSimulation()
-        }
+    okBtn.onAction = (event: ActionEvent) => {
+      val a: Try[Boolean] = for {
+        width <- Try(widthField.text.value.toInt)
+        height <- Try(heightField.text.value.toInt)
+      } yield {
+        dialog.close()
+        currentSim.stop()
+        restartSimulation(width, height)
       }
-
-      dialogVbox.children_= (List(
-        new Text("Width: "),
-        widthField,
-        new Text("Height: "),
-        heightField,
-        okBtn
-      ))
-
-      val dialogScene = new Scene(dialogVbox, 300, 200)
-      dialog.setScene(dialogScene)
-      dialog.show()
-
+      a.getOrElse(errorMsg.text_=("Dimensions are invalid"))
     }
+
+    val dialogVbox = new VBox(10,
+      new Text("Width: "),
+      widthField,
+      new Text("Height: "),
+      heightField,
+      new HBox(10,
+        okBtn,
+        errorMsg
+      )
+    )
+
+    val dialogScene = new Scene(dialogVbox, 300, 200)
+    dialog.setScene(dialogScene)
+    dialog.show()
   }
 
   private def drawBoard(lifeBoard: LifeBoard) = {
