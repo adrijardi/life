@@ -45,9 +45,14 @@ object LifeApp extends JFXApp {
 
   val stepText = new Text("0")
 
+  val fpsText = new Text("Fps: 000")
+  var fpsLastSteps = 0
+  var fpsTimeTrigger = 0L
+
   val down = new VBox(10,
     new HBox(10,
       stepText,
+      fpsText,
       restartBtn
     ),
     new HBox(10,
@@ -72,7 +77,19 @@ object LifeApp extends JFXApp {
   }
 
   private val speedProvider = () => speedSlider.value.value.toInt
-  private val stepUpdater = (step: Int) => stepText.text = "Step: " + step
+  private val stepUpdater = (step: Int) => {
+    stepText.text = "Step: " + step
+    fpsUpdater(step)
+  }
+
+  def fpsUpdater(step: Int): Unit = {
+    val time = System.currentTimeMillis()
+    if(time >= fpsTimeTrigger) {
+      fpsText.text_=(s"Fps: ${step - fpsLastSteps}")
+      fpsTimeTrigger = time + 1000
+      fpsLastSteps = step
+    }
+  }
 
   var canvasPainter = CanvasPainter(canvas, None, zoomSlider.value.toInt, Pos(0,0))
   def updatePainter(op: => CanvasPainter) = synchronized {
@@ -99,6 +116,7 @@ object LifeApp extends JFXApp {
     canvas.height_=(height)
     stage.sizeToScene()
     currentSim = generator(SimulationConfig(seed, width, height))
+    fpsLastSteps = 0
     currentSim.start()
   }
 

@@ -22,18 +22,21 @@ class SimulationManager(seed: Option[Int], width: Int, height: Int, speedProvide
     var step = 0
     Task {
       while(running.get()) {
+        val startTime = System.currentTimeMillis()
         life = life.getNextStep
         imageUpdater(life.board)
         step += 1
         stepUpdater(step)
-        Thread.sleep(calculateSleep)
+        Thread.sleep(calculateSleep(startTime))
       }
       finishPromise.success()
     }
   }
 
-  def calculateSleep: Int = {
-    1000 / speedProvider()
+  def calculateSleep(startTime: Long): Long = {
+    val desiredTime = 1000 / speedProvider()
+    val elapsedTime = System.currentTimeMillis() - startTime
+    Math.max(0, desiredTime - elapsedTime)
   }
 
   def start(): Boolean = {

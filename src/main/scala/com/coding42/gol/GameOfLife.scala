@@ -27,7 +27,7 @@ class GameOfLife(val board: LifeBoard)(implicit conf: GameConfig) {
   }
 
   def getNextStep: GameOfLife = {
-    val newStep: LifeBoard = (0 until conf.sizeX).map { x =>
+    val newStep: LifeBoard = (0 until conf.sizeX).par.map { x =>
       evaluateRow(x)
     }.toVector
     new GameOfLife(newStep)

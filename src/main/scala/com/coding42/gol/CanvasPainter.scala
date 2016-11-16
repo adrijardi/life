@@ -20,9 +20,7 @@ case class CanvasPainter(canvas: Canvas, lifeBoardOp: Option[LifeBoard], zoom: I
 
   def withBoard(lifeBoard: LifeBoard) = this.copy(lifeBoardOp = Some(lifeBoard))
 
-  def moveOffset(movement: Pos) = {
-    this.copy(offset = clampedOffset + movement)
-  }
+  def moveOffset(movement: Pos) = this.copy(offset = clampedOffset + movement)
 
   def paintBoard() = {
     val image = new WritableImage(canvas.width.toInt, canvas.height.toInt)
@@ -32,7 +30,7 @@ case class CanvasPainter(canvas: Canvas, lifeBoardOp: Option[LifeBoard], zoom: I
 
       val mapper = imageMapper(lifeBoard, offset, zoom)
 
-      lifeBoard.zipWithIndex.foreach { case (row, x) =>
+      lifeBoard.zipWithIndex.par.foreach { case (row, x) =>
         row.zipWithIndex.foreach { case (alive, y) =>
 
           pixelWriter.setColor(x, y, mapper(x, y))
