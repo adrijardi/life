@@ -65,7 +65,9 @@ object GameOfLife {
 
   case class GameConfig(sizeX: Int, sizeY: Int)
 
-  case class Pos(x: Int, y: Int) {
+  case class Pos(x: Int, y: Int) { // TODO move into it's own class and extract neighbours function to companion object
+    def +(other: Pos) = Pos(x + other.x, y + other.y)
+
     def neighbours(implicit conf: GameConfig): Seq[Pos] = {
       for{
         newX <- x-1 to x+1 if newX >= 0 && newX < conf.sizeX

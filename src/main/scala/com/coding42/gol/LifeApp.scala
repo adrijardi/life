@@ -1,6 +1,7 @@
 package com.coding42.gol
 
-import javafx.event.{ActionEvent, EventHandler}
+import javafx.beans.Observable
+import javafx.event.ActionEvent
 
 import com.coding42.gol.GameOfLife.{LifeBoard, Pos}
 import com.coding42.gol.SimulationManager.SimulationConfig
@@ -12,8 +13,6 @@ import scalafx.scene.control.{Button, Slider, TextField}
 import scalafx.scene.layout._
 import scalafx.scene.text.Text
 import scala.util.Try
-import scalafx.scene.image.WritableImage
-import scalafx.scene.paint.Color
 import scalafx.stage.{Modality, Stage}
 
 object LifeApp extends JFXApp {
@@ -34,6 +33,7 @@ object LifeApp extends JFXApp {
   zoomSlider.setMin(1)
   zoomSlider.setMax(10)
   zoomSlider.setValue(0)
+  zoomSlider.value.addListener((observable: Observable) => updatePainter(canvasPainter.withZoom(zoomSlider.value.toInt)))
 
   val restartBtn = new Button("Restart")
   val okBtn = new Button("OK")
@@ -73,7 +73,21 @@ object LifeApp extends JFXApp {
 
   private val speedProvider = () => speedSlider.value.value.toInt
   private val stepUpdater = (step: Int) => stepText.text = "Step: " + step
-  private val imageUpdater = (image: LifeBoard) => drawBoard(image)
+
+  var canvasPainter = CanvasPainter(canvas, None, zoomSlider.value.toInt, Pos(0,0))
+  def updatePainter(op: => CanvasPainter) = synchronized {
+    canvasPainter = op
+  }
+
+  val canvasScrollHandler = new CanvasScrollHandler(
+    canvas,
+    movement => updatePainter(canvasPainter.moveOffset(movement))
+  )
+
+  private val imageUpdater = (image: LifeBoard) => {
+    updatePainter(canvasPainter.withBoard(image))
+    canvasPainter.paintBoard()
+  }
 
   val generator = SimulationManager.generator(speedProvider, stepUpdater, imageUpdater)
   var currentSim: SimulationManager = _
@@ -120,41 +134,6 @@ object LifeApp extends JFXApp {
     val dialogScene = new Scene(dialogVbox, 300, 200)
     dialog.setScene(dialogScene)
     dialog.show()
-  }
-
-  private def drawBoard(lifeBoard: LifeBoard) = {
-    val image = new WritableImage(canvas.width.toInt, canvas.height.toInt)
-    val pixelWriter = image.pixelWriter
-
-    val center = Pos(canvas.width.toInt/2, canvas.height.toInt/2)
-    val mapper = imageMapper(lifeBoard, center, zoomSlider.value.toInt)
-
-    lifeBoard.zipWithIndex.foreach { case (row, x) =>
-      row.zipWithIndex.foreach{ case (alive, y) =>
-
-        pixelWriter.setColor(x, y, mapper(x,y))
-      }
-    }
-
-    gc.drawImage(image, 0, 0)
-  }
-
-  private def imageMapper(lifeBoard: LifeBoard, center: Pos, zoom: Int): (Int, Int) => Color = {
-    val width = lifeBoard.length
-    val height = lifeBoard(0).length
-    val widthDiv2: Int = width / 2
-    val heightDiv2: Int = height / 2
-
-
-    (x, y) => {
-      val newX = (x - widthDiv2) / zoom + widthDiv2
-      val newY = (y - heightDiv2) / zoom + heightDiv2
-
-      if( lifeBoard(newX)(newY) )
-        Color.Black
-      else
-        Color.White
-    }
   }
 
 }
